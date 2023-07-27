@@ -572,7 +572,7 @@ def create_network_db_and_template():
     arcpy.management.CreateFeatureDataset(network_db, 'Network', SLCo_streets)
     
     print('Creating network template ...')
-    output_xml_file = r"C:\SLCo_GIS\Network Dataset\slco_TEST_template_manual_subtypes.xml"
+    output_xml_file = r"C:\SLCo_GIS\Network Dataset\slco_TEST_template_subtypes_oneways.xml"
     
     return output_xml_file
 
