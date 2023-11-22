@@ -42,7 +42,6 @@ staging_db = r"C:\SLCo_GIS\Network Dataset\SLCo_staging.gdb"
 PUB = r"C:\Users\eneemann\AppData\Roaming\Esri\ArcGISPro\Favorites\Pub - SLCGISDB.sde"
 pub_roads = os.path.join(PUB, r"slcopub.SLCO.Transportation\slcopub.SLCO.RoadCenterline")
 export_roads = os.path.join(staging_db, "Roads_PUB_export_" + today)
-airport_roads = os.path.join(staging_db, "Airport_Roads_PUB_schema")
 wgs84_export_roads = os.path.join(staging_db, f"Roads_PUB_export_{today}_WGS84")
 env.workspace = staging_db
 env.overwriteOutput = True
@@ -104,11 +103,6 @@ def project_to_wgs84():
     print(f"Projecting {export_roads} to WGS84...")
     sr = arcpy.SpatialReference("WGS 1984")
     arcpy.management.Project(export_roads, wgs84_export_roads, sr, "WGS_1984_(ITRF00)_To_NAD_1983")
-    
-    
-def append_airport_roads():
-    print("Appending airport roads...")
-    arcpy.management.Append(airport_roads, wgs84_export_roads, "NO_TEST")
 
 
 # def calc_fields(streets):
@@ -445,13 +439,30 @@ def perform_snapping():
         with arcpy.da.SearchCursor(n_table, near_fields, oid_query) as scursor:
             for row in scursor:
                 near_oids.append(row[0])
-
+                
+        # Create empty lists for snapping endpoints in each snap area
+        first_x_all = []
+        first_y_all = []
+        last_x_all = []
+        last_y_all = []
+        
         snap_query = f"""OBJECTID IN ({','.join([str(o) for o in near_oids])}) AND NEAR_DIST IS NOT NULL"""
         sql_clause = [None, "ORDER BY NEAR_DIST ASC, OBJECTID ASC"]
         #             0          1               2             3           4             5           6          7         8
         fields = ['SHAPE@', 'Shape_Length', 'start_h3_9', 'end_h3_9', 'NEAR_DIST', 'snap_start', 'snap_end', 'OID@', 'snap_status']
         with arcpy.da.UpdateCursor(snapped, fields, snap_query, '', '', sql_clause) as ucursor:
             cnt = 0
+            # Populate endpoint list at each snap area
+            for row in ucursor:
+                first_x_all.append(row[0].firstPoint.X)
+                first_y_all.append(row[0].firstPoint.Y)
+                last_x_all.append(row[0].lastPoint.X)
+                last_y_all.append(row[0].lastPoint.Y)
+                
+            # Calculate central snapping locations for each endpoint list
+            # How do we keep track of which endpoint should be snapped, first or last, in an area?
+            
+            
             for row in ucursor:
                 skipped = False
                 shape_obj = row[0]
@@ -757,7 +768,6 @@ def create_and_build_network():
 #: Export from PUB and calculate fields
 export_from_pub()
 project_to_wgs84()
-append_airport_roads()
 # calc_fields(wgs84_export_roads)
 strip_fields(wgs84_export_roads)
 blanks_to_nulls(wgs84_export_roads)
