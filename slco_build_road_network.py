@@ -26,7 +26,7 @@ import pandas as pd
 from tqdm import tqdm
 
 
-# Start timer and print start time in UTC
+# Start timer and print start time
 start_time = time.time()
 readable_start = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 print("The script start time is {}".format(readable_start))
@@ -109,71 +109,6 @@ def project_to_wgs84():
 def append_airport_roads():
     print("Appending airport roads...")
     arcpy.management.Append(airport_roads, wgs84_export_roads, "NO_TEST")
-
-
-# def calc_fields(streets):
-
-#     # Add fields needed for network calculations        
-#     arcpy.management.AddField(streets, "TrvlTime", "FLOAT")
-#     arcpy.management.AddField(streets, "Distance", "DOUBLE")
-#     arcpy.management.AddField(streets, "One_Way", "TEXT", "", "", 5)
-
-#     # Calculated necessary travel time fields
-#     print('Calculating geometry (distance) ...')
-#     geom_start_time = time.time()
-#     arcpy.management.CalculateGeometryAttributes(streets, [["Distance", "LENGTH"]], "MILES_US", "", sr_stateplane)
-#     print("Time elapsed calculating geometry: {:.2f}s".format(time.time() - geom_start_time))
-
-#     # Update speed limit fields
-#     lt_20 = 0
-#     null_speed = 0
-#     fields = ['SPEED_LMT']
-#     with arcpy.da.UpdateCursor(streets, fields) as cursor:
-#         print("Looping through rows to calculate SPEED_LMT ...")
-#         for row in cursor:
-#             if row[0] is None:
-#                 row[0] = 20
-#                 null_speed += 1
-#             if row[0] < 20:
-#                 row[0] = 20
-#                 lt_20 += 1
-#             cursor.updateRow(row)
-#     print(f"Total count of NULL SPEED_LMT updated to 20 mph: {null_speed}")
-#     print(f"Total count of SPEED_LMT < 20 updated to 20 mph: {lt_20}")
-
-
-#     # Calculate travel time field
-#     update_count = 0
-#     #             0            1         2    
-#     fields = ['TrvlTime', 'Distance', 'SPEED_LMT']
-#     with arcpy.da.UpdateCursor(streets, fields) as cursor:
-#         print("Looping through rows to calculate TrvlTime ...")
-#         for row in cursor:
-#             if row[2] == 0:
-#                 row[2] = 20
-#             row[0] = (row[1]/row[2])*60
-#             update_count += 1
-#             cursor.updateRow(row)
-#     print(f"Total count of TrvlTime updates: {update_count}")
-
-#     # Calculate "One_Way" field
-#     update_count_oneway = 0
-#     #                    0         1  
-#     fields_oneway = ['ONEWAY', 'One_Way']
-#     with arcpy.da.UpdateCursor(streets, fields_oneway) as cursor:
-#         print("Looping through rows to calculate One_Way field ...")
-#         for row in cursor:
-#             if row[0] == '0' or row[0] == None:   
-#                 row[1] = 'B'
-#                 update_count_oneway += 1
-#             elif row[0] == '1':
-#                 row[1] = 'FT'
-#                 update_count_oneway += 1
-#             elif row[0] == '2':
-#                 row[1] = 'TF'
-#                 update_count_oneway += 1
-#             cursor.updateRow(row)
-#     print(f"Total count of One_Way updates: {update_count_oneway}")
 
 
 def strip_fields(streets):
@@ -685,7 +620,7 @@ def calc_network_fields(network_st):
     
 
     # #: Recalculate travel times based on multiplication factors
-    # #: Interstates to not get an additional multiplication factor applied
+    # #: Interstates do not get an additional multiplication factor applied
 
     # #: First, multiply all "other" streets by 2
     # update_count2 = 0
@@ -758,7 +693,6 @@ def create_and_build_network():
 export_from_pub()
 project_to_wgs84()
 append_airport_roads()
-# calc_fields(wgs84_export_roads)
 strip_fields(wgs84_export_roads)
 blanks_to_nulls(wgs84_export_roads)
 
@@ -794,7 +728,7 @@ arcpy.CheckInExtension("network")
 
 
 print("Script shutting down ...")
-# Stop timer and print end time in UTC
+# Stop timer and print end time
 readable_end = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 print("The script end time is {}".format(readable_end))
 print("Time elapsed: {:.2f}s".format(time.time() - start_time))
